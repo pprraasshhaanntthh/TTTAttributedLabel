@@ -90,6 +90,8 @@ static inline void TTTSimulateLongPressOnLabelAtPointWithDuration(TTTAttributedL
 - (void)testContentSize {
     label.text = TTTAttributedTestString();
     expect([label intrinsicContentSize]).to.equal([label sizeThatFits:CGSizeZero]);
+    label.text = kTestLabelText;
+    expect([label intrinsicContentSize]).to.equal([label sizeThatFits:CGSizeZero]);
 }
 
 - (void)testHighlighting {
@@ -104,6 +106,8 @@ static inline void TTTSimulateLongPressOnLabelAtPointWithDuration(TTTAttributedL
 }
 
 - (void)testLinkTintColor {
+    label.tintColor = [UIColor whiteColor];
+    
     label.inactiveLinkAttributes = @{ kTTTBackgroundFillColorAttributeName : (id)[UIColor grayColor].CGColor };
     label.activeLinkAttributes = @{ kTTTBackgroundFillColorAttributeName : (id)[UIColor redColor].CGColor };
     label.text = TTTAttributedTestString();
@@ -174,6 +178,13 @@ static inline void TTTSimulateLongPressOnLabelAtPointWithDuration(TTTAttributedL
                                             limitedToNumberOfLines:0];
     
     UIFont *font = [testString attribute:NSFontAttributeName atIndex:0 effectiveRange:NULL];
+    XCTAssertGreaterThan(size.height, font.pointSize, @"Text should size to more than one line");
+    
+    size = [TTTAttributedLabel sizeThatFitsAttributedString:testString
+                                            withConstraints:kTestLabelSize
+                                     limitedToNumberOfLines:2];
+    
+    font = [testString attribute:NSFontAttributeName atIndex:0 effectiveRange:NULL];
     XCTAssertGreaterThan(size.height, font.pointSize, @"Text should size to more than one line");
 }
 
@@ -382,6 +393,7 @@ static inline void TTTSimulateLongPressOnLabelAtPointWithDuration(TTTAttributedL
     expect(label.isAccessibilityElement).to.beFalsy();
     expect(label.accessibilityElementCount).will.equal(2);
     expect([label accessibilityElementAtIndex:0]).toNot.beNil();
+    expect([label indexOfAccessibilityElement:nil]).to.equal(NSNotFound);
 }
 
 #pragma mark - TTTAttributedLabelLink tests
@@ -725,13 +737,23 @@ static inline void TTTSimulateLongPressOnLabelAtPointWithDuration(TTTAttributedL
     label.text = TTTAttributedTestString();
     
     NSData *encodedLabel = [NSKeyedArchiver archivedDataWithRootObject:label];
-    
+
     TTTAttributedLabel *newLabel = [NSKeyedUnarchiver unarchiveObjectWithData:encodedLabel];
     
     expect(newLabel.text).to.equal(label.text);
 }
 
 #pragma mark - TTTAttributedLabelLink
+
+- (void)testAddSingleLink {
+    TTTAttributedLabelLink *link = [[TTTAttributedLabelLink alloc] initWithAttributesFromLabel:label
+                                                                            textCheckingResult:
+                                    [NSTextCheckingResult linkCheckingResultWithRange:NSMakeRange(0, 1) URL:testURL]];
+    
+    [label addLink:link];
+    
+    expect(label.links.count).to.equal(1);
+}
 
 - (void)testEncodingLink {
     TTTAttributedLabelLink *link = [[TTTAttributedLabelLink alloc] initWithAttributesFromLabel:label
